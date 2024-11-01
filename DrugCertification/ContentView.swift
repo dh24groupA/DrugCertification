@@ -17,7 +17,7 @@ struct ContentView: View {
                 .font(.headline)
 
             BarcodeScannerView { code in
-                self.scannedCode = "バーコード内容: \(code)"
+                self.scannedCode = "コード内容: \(code)"
             }
             .edgesIgnoringSafeArea(.all)
         }

@@ -55,7 +55,7 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
         if captureSession.canAddOutput(metadataOutput) {
             captureSession.addOutput(metadataOutput)
             metadataOutput.setMetadataObjectsDelegate(context.coordinator, queue: DispatchQueue.main)
-            metadataOutput.metadataObjectTypes = [.ean13, .ean8, .code128]
+            metadataOutput.metadataObjectTypes = [.ean13, .ean8, .code128, .qr]
         }
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
