@@ -10,15 +10,12 @@ import SwiftUI
 import AVFoundation
 
 struct ContentView: View {
-    @State private var isAuthenticated = false
+    @State private var isAuthenticated = true//falseだけどテスト用にtrue
     @State private var isRecording = false
     @State private var showDatePicker = false
     @State private var recordDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
     @State private var patientName = ""
     @State private var patientID = ""
-    @State private var audioRecorder: AVAudioRecorder?
-    @State private var showStopRecordingAlert = false
-    @State private var recordedFileURL: URL? // 録音ファイルの保存URL
 
     var body: some View {
         if !isAuthenticated {
@@ -42,30 +39,13 @@ struct ContentView: View {
                 HStack {
                     // 録音ボタン
                     Button(action: {
-                        if isRecording {
-                            showStopRecordingAlert = true
-                        } else {
-                            startRecording()
-                        }
+                        //ボタンを押した時の処理
                     }) {
                         HStack {
-                            Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(isRecording ? .red : .blue)
-                            Text(isRecording ? "録音停止" : "録音開始")
+                            Text("左のボタンだよー")
                         }
                     }
                     .padding(.leading)
-                    .alert(isPresented: $showStopRecordingAlert) {
-                        Alert(
-                            title: Text("録音停止の確認"),
-                            message: Text("録音を停止してもよろしいですか？"),
-                            primaryButton: .destructive(Text("はい")) {
-                                stopRecording() // 録音停止
-                            },
-                            secondaryButton: .cancel(Text("キャンセル"))
-                        )
-                    }
                     
                     Spacer()
                     
@@ -82,7 +62,7 @@ struct ContentView: View {
                 }
                 .padding(.top)
                 
-                Text("看護記録")
+                Text("薬剤情報記録")
                     .font(.largeTitle)
                     .bold()
                     .padding(.top)
@@ -127,12 +107,6 @@ struct ContentView: View {
                         TextField("P: 計画", text: .constant(""))
                     }
                 }
-
-                if let recordedFileURL = recordedFileURL {
-                    Text("録音ファイル: \(recordedFileURL.lastPathComponent)")
-                        .font(.footnote)
-                        .padding()
-                }
             }
             .onAppear {
                 patientName = "山田 太郎"
@@ -145,49 +119,6 @@ struct ContentView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yy/MM/dd"
         return formatter.string(from: date)
-    }
-    
-    func startRecording() {
-        let audioSession = AVAudioSession.sharedInstance()
-        
-        audioSession.requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                if granted {
-                    do {
-                        try audioSession.setCategory(.playAndRecord, mode: .default)
-                        try audioSession.setActive(true)
-                        
-                        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                        let audioFileName = documentsPath.appendingPathComponent("recording.m4a")
-                        
-                        let settings: [String: Any] = [
-                            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                            AVSampleRateKey: 12000,
-                            AVNumberOfChannelsKey: 1,
-                            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-                        ]
-                        
-                        audioRecorder = try AVAudioRecorder(url: audioFileName, settings: settings)
-                        audioRecorder?.record()
-                        
-                        isRecording = true
-                        recordedFileURL = audioFileName
-                        print("録音が開始されました: \(audioFileName)")
-                    } catch {
-                        print("録音エラー: \(error.localizedDescription)")
-                    }
-                } else {
-                    print("マイクの使用が許可されていません")
-                }
-            }
-        }
-    }
-    
-    func stopRecording() {
-        audioRecorder?.stop()
-        audioRecorder = nil
-        isRecording = false
-        print("録音が停止されました")
     }
 }
 
