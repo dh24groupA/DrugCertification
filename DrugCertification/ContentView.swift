@@ -28,8 +28,7 @@ struct ContentView: View {
         case finished
     }
     
-    @State private var setting = Setting.scanned
-    
+    @State private var setting = Setting.title
     var body: some View {
         switch setting {
             
@@ -126,6 +125,7 @@ struct ContentView: View {
                 // 記録日、患者名、患者IDの表示
                 VStack(alignment: .leading, spacing: 10) {
                     Text("本来は読み取った時点で次へ進む")
+                        .padding()
                     Image("keirou_couple2")
                         .resizable()
                         .frame(width: 200, height: 200)
@@ -140,7 +140,7 @@ struct ContentView: View {
             
         case .scanned:
             VStack {
-                HStack {
+                HStack{
                     // 録音ボタン
                     Button(action: {
                         //ボタンを押した時の処理
@@ -154,12 +154,22 @@ struct ContentView: View {
                     
                     Spacer()
                     
+                    Text("薬剤投与前最終確認")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding(.bottom)
+                        .padding(.leading)
+                        .padding(.trailing)
+                    
+                    Spacer()
+                    
                     Button(role: .destructive) {
                         // 処理
                         isShowAlert = true
                     } label: {
                         Label("投与完了する", systemImage: "pencil.and.outline")
                     }
+                    .padding(.leading)
                     .alert("本当に完了しますか？", isPresented: $isShowAlert){
                         Button("No"){
                             
@@ -173,12 +183,8 @@ struct ContentView: View {
                 }
                 .padding(.top)
                 
-                Text("薬剤投与前最終確認")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top)
                 
-                // 記録日、患者名、患者IDの表示
+                
                 HStack{
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
