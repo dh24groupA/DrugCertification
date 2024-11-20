@@ -7,11 +7,10 @@
 
 
 import SwiftUI
-import AVFoundation
+import WebKit
 
 struct ContentView: View {
-    @State private var isAuthenticated = true//falseだけどテスト用にtrue
-    @State private var isRecording = false
+    @State private var isAuthenticated = true // テスト用にtrue
     @State private var showDatePicker = false
     @State private var recordDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
     @State var isShowAlert = false
@@ -19,8 +18,11 @@ struct ContentView: View {
     @State private var patientID = ""
     @State private var medicineName = ""
     @State private var medicineID = ""
+    @State private var setting = Setting.title
+    @Binding var receivedData: String? // Webアプリから受け取ったデータ
+    @State private var showWebView = false // WebViewの表示状態
     
-    enum Setting{
+    enum Setting {
         case title
         case drugAuth
         case patientAuth
@@ -28,12 +30,10 @@ struct ContentView: View {
         case finished
     }
     
-    @State private var setting = Setting.title
     var body: some View {
         switch setting {
             
-        case .title://title
-            
+        case .title:
             VStack {
                 Text("薬剤認証")
                     .font(.title)
@@ -52,7 +52,6 @@ struct ContentView: View {
         case .drugAuth:
             VStack {
                 HStack {
-                    
                     Button(action: {
                         setting = .title
                     }) {
@@ -63,40 +62,48 @@ struct ContentView: View {
                     Spacer()
                     
                     Button(action: {
-                        //ボタンを押した時の処理
                         setting = .patientAuth
                     }) {
-                        HStack {
-                            Text("次へ")
-                        }
+                        Text("次へ")
                     }
                 }
                 .padding(.top)
                 
-                Text("ここで薬剤のコードを読み取る")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top)
-                
-                // 記録日、患者名、患者IDの表示
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("本来は読み取った時点で次へ進む")
-                    Image("medicine_bin")
-                        .resizable()
-                        .frame(width: 100, height: 200)
+                if showWebView {
+                    WebView(urlString: "https://dh24-nurceapi.azurewebsites.net/")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .edgesIgnoringSafeArea(.all)
+                } else {
+                    if let data = receivedData {
+                        Text("受信したデータ: \(data)")
+                            .padding()
+                            .font(.headline)
+                            .foregroundColor(.black)
+                    } else {
+                        Text("データを受信していません")
+                            .padding()
+                            .foregroundColor(.gray)
+                    }
                 }
-                .padding()
-                
             }
             .onAppear {
-                medicineName = "お薬飲めたね"
-                patientID = "093"
-            }//本来データは外部から得る
+                showWebView = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveWebData)) { notification in
+                if let data = notification.object as? String {
+                    receivedData = data
+                    showWebView = false // WebViewを閉じる
+                    
+                    // 1秒後に次の処理を実行
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        setting = .patientAuth
+                    }
+                }
+            }
             
         case .patientAuth:
             VStack {
                 HStack {
-                    
                     Button(action: {
                         setting = .drugAuth
                     }) {
@@ -107,12 +114,9 @@ struct ContentView: View {
                     Spacer()
                     
                     Button(action: {
-                        //ボタンを押した時の処理
                         setting = .scanned
                     }) {
-                        HStack {
-                            Text("次へ")
-                        }
+                        Text("次へ")
                     }
                 }
                 .padding(.top)
@@ -122,16 +126,13 @@ struct ContentView: View {
                     .bold()
                     .padding(.top)
                 
-                // 記録日、患者名、患者IDの表示
                 VStack(alignment: .leading, spacing: 10) {
                     Text("本来は読み取った時点で次へ進む")
-                        .padding()
                     Image("keirou_couple2")
                         .resizable()
                         .frame(width: 200, height: 200)
                 }
                 .padding()
-                
             }
             .onAppear {
                 patientName = "山田 太郎"
@@ -140,52 +141,38 @@ struct ContentView: View {
             
         case .scanned:
             VStack {
-                HStack{
-                    // 録音ボタン
+                HStack {
                     Button(action: {
-                        //ボタンを押した時の処理
                         setting = .patientAuth
                     }) {
-                        HStack {
-                            Text("戻る")
-                        }
+                        Text("戻る")
                     }
                     .padding(.leading)
-                    
-                    Spacer()
-                    
-                    Text("薬剤投与前最終確認")
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.bottom)
-                        .padding(.leading)
-                        .padding(.trailing)
                     
                     Spacer()
                     
                     Button(role: .destructive) {
-                        // 処理
                         isShowAlert = true
                     } label: {
                         Label("投与完了する", systemImage: "pencil.and.outline")
                     }
-                    .padding(.leading)
-                    .alert("本当に完了しますか？", isPresented: $isShowAlert){
-                        Button("No"){
-                            
-                        }
-                        Button("Yes"){
+                    .alert("本当に完了しますか？", isPresented: $isShowAlert) {
+                        Button("No") {}
+                        Button("Yes") {
                             setting = .finished
                         }
-                    }message: {
+                    } message: {
                         Text("本当に？？")
                     }
                 }
                 .padding(.top)
                 
+                Text("薬剤投与前最終確認")
+                    .font(.largeTitle)
+                    .bold()
+                    .padding(.top)
                 
-                
-                HStack{
+                HStack {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("記録日:")
@@ -203,11 +190,9 @@ struct ContentView: View {
                     .padding()
                     
                     VStack(alignment: .leading, spacing: 10) {
-                        
                         Text("薬品名: \(medicineName.isEmpty ? "未入力" : medicineName)")
                         Text("投与方法: 点滴")
                         Text("投与用量: 800ml")
-                        
                     }
                 }
                 .padding()
@@ -220,7 +205,6 @@ struct ContentView: View {
                         .frame(height: 150)
                         .padding()
                 }
-                
             }
             .onAppear {
                 patientName = "山田 太郎"
@@ -230,17 +214,15 @@ struct ContentView: View {
             }
             
         case .finished:
-            VStack{
+            VStack {
                 Text("投与を記録しました")
                     .padding()
                 Button(action: {
-                    //ボタンを押した時の処理
                     setting = .title
                 }) {
                     Text("最初から記録する")
                 }
             }
-            
         }
     }
 }
@@ -251,6 +233,10 @@ func formattedDate(_ date: Date) -> String {
     return formatter.string(from: date)
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    @State static var previewData: String? = "サンプルデータ"
+
+    static var previews: some View {
+        ContentView(receivedData: $previewData)
+    }
 }
